@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "parse-url": "^8.1.0"
+  }
+}
