@@ -1,46 +1,56 @@
-export interface Recruiter {
-  imId:           string;
-  imUserType:     string;
-  chatted:        boolean;
-  recruiterName:  string;
+export interface ILiepinRecruiter {
+  _id:string;
+  imId: string;
+  imUserType: string;
+  chatted: boolean;
+  recruiterName: string;
   recruiterTitle: string;
-  recruiterId:    string;
+  recruiterId: string;
   recruiterPhoto: string;
 }
 
 
-export interface Pokedex {
-  job:        Job;
-  recruiter:  Recruiter;
-  comp:       Comp;
-  dataParams: string;
-  dataInfo:   string;
-}
 
-export interface Comp {
-  compName:     string;
-  compId?:      number;
+export interface ILiepinComp {
+  _id:string;
+  compName: string;
+  compId?: string;
   compIndustry: string;
-  compStage?:   string;
-  compLogo:     string;
-  link:         string;
-  compScale:    string;
+  compStage?: string;
+  compLogo: string;
+  link: string;
+  compScale: string;
+  validComp:boolean;
+
 }
 
-export interface Job {
-  labels:           string[];
-  jobId:            string;
-  jobKind:          string;
-  title:            string;
+
+export interface ILiepinJob {
+  _id:string;
+  labels: string[];
+  jobId: string;
+  jobKind: string;
+  title: string;
   requireWorkYears: string;
-  requireEduLevel:  string;
-  refreshTime:      string;
-  topJob:           boolean;
-  dq:               string; //地區
-  salary:           string;
-  link:             string;
-  dataPromId:       string;
-  advViewFlag:      boolean;
+  requireEduLevel: string;
+  refreshTime: string;
+  topJob: boolean;
+  dq: string; //地區
+  salary: string;
+  link: string;
+  dataPromId: string;
+  advViewFlag: boolean;
+  //--- add
+  recruiterId:string;
+  comp:ILiepinComp
+  compId:string;
+  validComp:boolean;
 }
 
-
+export interface ILiepinJobRaw {
+  job: ILiepinJob;
+  recruiter: ILiepinRecruiter;
+  comp: ILiepinComp;
+  dataParams: string;
+  dataInfo: string;
+}

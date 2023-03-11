@@ -83,10 +83,13 @@ function readTextFileAsync(fileName: string): Promise<string> {
     });
   });
 }
-
+function deleteFile(fullPath: string) {
+  fs.unlinkSync(fullPath);
+}
 
 export const NodeFileUtils = {
   loopScanFile,
   readTextFileSync,
-  readTextFileAsync
+  readTextFileAsync,
+  deleteFile
 }

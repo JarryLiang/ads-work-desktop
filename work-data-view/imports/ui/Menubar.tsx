@@ -11,7 +11,7 @@ const Holder =styled.div`
     flex-direction: row;
   }
   margin-bottom: 4px;
-  padding-bottom: 4px;
+  padding-bottom: 4px;  
 `;
 
 export function MenuBar() {
@@ -29,6 +29,5 @@ export function MenuBar() {
     <ul>
       {renderItems()}
     </ul>
-    <hr/>
   </Holder>);
 }

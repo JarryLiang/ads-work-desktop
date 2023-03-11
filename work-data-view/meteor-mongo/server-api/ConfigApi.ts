@@ -8,7 +8,7 @@ const _globalCache: {
   [key: string]: any
 } = {};
 
-async function getItem(_id: string, defaultValue: any) {
+async function getItem(_id: string, defaultValue?: any) {
   if(_globalCache[_id]){
     return _globalCache[_id];
   }
@@ -22,11 +22,11 @@ async function getItem(_id: string, defaultValue: any) {
 }
 
 async function getItemForce(_id:string){
-  const v= await ConfigCollection.findOne({_id});
+  const v:any= await ConfigCollection.findOne({_id});
   if(v){
-    _globalCache[_id]=v;
+    _globalCache[_id]=v.value;
   }
-  return v;
+  return v.value;
 }
 
 async function setItem(_id: string, value: any) {
@@ -38,8 +38,13 @@ async function setItem(_id: string, value: any) {
   _globalCache[_id] = value;
 }
 
+const keys = {
+  IMPORT_PATH:"import_path"
+}
 export const ConfigApi = {
   getItem,
   getItemForce,
-  setItem
+  setItem,
+  keys
+
 }

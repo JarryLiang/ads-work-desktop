@@ -1,3 +1,4 @@
+import { ObjectUtils } from "@alibobo99/js-helper";
 
 type TClawPlatform =
   | "appgrowing"
@@ -15,10 +16,16 @@ type TClawDataType =
   |"leafletList"
   |"preLandpageList"
   |"ecomad"
-  |"company_summary";
+  |"company_summary"
+  |"jobCardList"
+  |"selectedDqCode" //leipin
+  |"dqs_other" //leipin
+  |"skip" //leipin
+  |"job51job"
+  ;
 
 
-interface IClawResult  {
+export interface IClawResult  {
   platform:TClawPlatform;
   type: TClawDataType;
   version:number,
@@ -97,6 +104,9 @@ function getPlatformFromUrl(data: any):TClawPlatform|undefined {
     if(url.indexOf("www.data.ai")>=0){
       return "data-ai";
     }
+    if(url.indexOf("51job.com")>=0){
+      return "job51";
+    }
   }
   return undefined;
 }
@@ -130,54 +140,163 @@ function parseBigSpy(data: any):IClawResult | undefined {
 
 }
 
+function prepareLeipinClawResult(type: TClawDataType, data: any) {
+  const rr:IClawResult = {
+    platform:"leipin",
+    type:type,
+    version:0,
+    data:data
+  }
+  return rr;
+}
+function prepareJob51ClawResult(type: TClawDataType, data:any) {
+  const rr:IClawResult = {
+    platform:"job51",
+    type:type,
+    version:0,
+    data:data
+  }
+  return rr;
+}
 
-function parseJson(data:any): any {
-  const platform:TClawPlatform|undefined =getPlatformFromUrl(data);
+
+const  liepinPath_JobCard:string[] = ["data","data","jobCardList"];
+const  path_postdata_params:string[] = ["postData","params"];
+const path_data_data:string[] = ["data","data"];
+  function seekParamWith(postDataParams: any[], name: string):boolean {
+  let match:boolean=false;
+  postDataParams.forEach((r)=>{
+    if(r.name === name){
+      match=true;
+    }
+  })
+  return match;
+}
+const leipinPaths = {
+  pagination1:["data","data","pagination"],
+  pagination2:["data","pagination"]
+}
+
+function parseLiepin(rootData: any) {
+  const jobCardList=ObjectUtils.getByPath(liepinPath_JobCard,rootData,undefined);
+  if(jobCardList){
+    return prepareLeipinClawResult("jobCardList",jobCardList);
+  }
+
+  const postDataParams = ObjectUtils.getByPath(path_postdata_params,rootData,undefined);
+  if(postDataParams){
+    if(seekParamWith(postDataParams,"selectedDqCode")){
+      const d =ObjectUtils.getByPath(path_data_data,rootData,undefined);
+      return prepareLeipinClawResult("selectedDqCode",d);
+    }
+  }
+  const {data} = rootData;
+  if(data){
+    if(data.dqs && data.salaries && data.jobKinds){
+      return prepareLeipinClawResult("dqs_other",data);
+    }
+  }
+  let pagination = ObjectUtils.getByPath(leipinPaths.pagination1,rootData, undefined);
+  if(pagination){
+    // @ts-ignore
+    const { totalPage } = pagination;
+    if(totalPage == 0){
+      return prepareLeipinClawResult("skip", null);
+    }
+  }
+  pagination = ObjectUtils.getByPath(leipinPaths.pagination2,rootData, undefined);
+  if(pagination){
+    // @ts-ignore
+    const { totalPage } = pagination;
+    if(totalPage == 0){
+      return prepareLeipinClawResult("skip", null);
+    }
+  }
+
+
+  return undefined;
+}
+const path_Job51 = {
+    job1:["data","resultbody","job"]
+}
+
+
+function parseJob51(rootData: any) {
+    const job1 = ObjectUtils.getByPath(path_Job51.job1,rootData, undefined);
+  if(job1){
+    const {totalCount,items} = job1;
+    if(totalCount ==0){
+      return prepareJob51ClawResult("skip", null);
+    }else {
+      if(items && items.length>0){
+        return prepareJob51ClawResult("job51job",  items);
+      }else {
+        return prepareJob51ClawResult("skip", null);
+      }
+    }
+  }
+
+  return undefined;
+}
+
+
+
+function parseJsonInternal(rootData:any): any {
+  const platform:TClawPlatform|undefined =getPlatformFromUrl(rootData);
   let r:IClawResult | undefined;
   switch (platform) {
-    case "bigspy":{
-      r = parseBigSpy(data);
-    }
+    case "bigspy":
+      r = parseBigSpy(rootData);
       break;
     case "data-ai":
-      r = parseDataAI(data);
+      r = parseDataAI(rootData);
       break;
     case "leipin":
+      r = parseLiepin(rootData);
+      break;
+    case "job51":
+      r = parseJob51(rootData);
       break;
   }
+
+  let oldLiepin = parseLiepin(rootData);
+  if(oldLiepin){
+    return oldLiepin;
+  }
+
+
   if(r){
     return r;
   }
 
-  if(hasFieldValue(data,"type","sloganList")){
+  if(hasFieldValue(rootData,"type","sloganList")){
     return prepareAppgrowingClawResult(
       "sloganList",
       0,
-      data["sloganList"]);
+      rootData["sloganList"]);
   }
-  if(hasFieldValue(data,"type","preLandpageList")){
+  if(hasFieldValue(rootData,"type","preLandpageList")){
     return prepareAppgrowingClawResult(
       "preLandpageList",
       0,
-      data["preLandpageList"]);
+      rootData["preLandpageList"]);
   }
-  if(hasFieldValue(data,"type","leafletList")){
+  if(hasFieldValue(rootData,"type","leafletList")){
     return prepareAppgrowingClawResult(
       "leafletList",
       0,
-      data["leafletList"]);
+      rootData["leafletList"]);
   }
 
-  if(hasFieldValue(data,"type","gameReservationList")){
+  if(hasFieldValue(rootData,"type","gameReservationList")){
     return prepareAppgrowingClawResult(
-
       "gameReservationList",
       0,
-      data["gameReservationList"]);
+      rootData["gameReservationList"]);
   }
 
-  if(hasFieldValue(data,"type","developerList")){
-    const developerList = data['gameReservationList'];
+  if(hasFieldValue(rootData,"type","developerList")){
+    const developerList = rootData['gameReservationList'];
     if(developerList){
       return prepareAppgrowingClawResult(
         "developerList",
@@ -187,14 +306,14 @@ function parseJson(data:any): any {
       throw "Error";
     }
   }
-  const gameReservationList = scanForKey(data, "gameReservationList", 3);
+  const gameReservationList = scanForKey(rootData, "gameReservationList", 3);
   if (gameReservationList) {
     return prepareAppgrowingClawResult(
       "gameReservationList",
       0,
       gameReservationList);
   }
-  const sloganList = scanForKey(data, "sloganList", 3);
+  const sloganList = scanForKey(rootData, "sloganList", 3);
   if (sloganList) {
     const rr:IClawResult = {
       platform: "appgrowing",
@@ -206,16 +325,18 @@ function parseJson(data:any): any {
   }
 }
 
-function parseFile(json:any):IClawResult|undefined {
-  const {data} = json;
-  const r1 = parseJson(json);
+
+function parseJson(json:any):IClawResult|undefined {
+
+  const r1 = parseJsonInternal(json);
   if(r1){
     return r1;
   }
 
+  const {data} = json;
   if(data){
     if (typeof data === "object") {
-      return parseJson(data);
+      return parseJsonInternal(data);
     }
   }else {
 
@@ -223,6 +344,16 @@ function parseFile(json:any):IClawResult|undefined {
   return undefined;
 }
 
+function parseFile(text:string):IClawResult|undefined {
+  const json = JSON.parse(text);
+  const r1 = parseJson(json);
+  if(r1){
+    return r1;
+  }
+  return undefined
+}
+
 export const ClawerFileAnalysisUtils = {
+  parseJson: parseJsonInternal,
   parseFile
 }

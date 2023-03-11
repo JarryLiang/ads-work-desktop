@@ -45,6 +45,7 @@ export function AlignCenterRow(props: IProps) {
       </HolderRight>
     );
   }
+  // @ts-ignore
   if(children.length==2){
     return (
       <Holder2 style={st}>
